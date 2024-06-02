@@ -1,0 +1,51 @@
+#! /usr/bin/env python
+
+import sys, re
+import subprocess
+
+BRANCH_ISSUE_KEY_REGEX = re.compile(r".*?/([A-Z]+?-\d+?)[-/].")
+COMMIT_ISSUE_KEY_REGEX = re.compile(r"^[A-Z]+?-\d+?:")
+
+
+class IssueKeyTagger:
+    def __init__(self) -> None:
+        self.commit_msg_filepath = self.collect_git_parameters()
+        branch_name = self.get_branch_name()
+        self.issue_key = self.find_issue_key(branch_name)
+
+        if self.issue_key is not None:
+            self.tag_commit_if_neccessary()
+
+    def collect_git_parameters(self) -> str:
+        return sys.argv[1]
+
+    def get_branch_name(self) -> str:
+        completed_process = subprocess.run(["git", "branch", "--show-current"], capture_output=True)
+
+        if completed_process.returncode == 0:
+            return completed_process.stdout.decode("utf-8").strip()
+
+        print("No branch name found. Skip prefixing the commit-message.")
+        return ""
+
+    def find_issue_key(self, branch_name: str) -> str | None:
+        issue_key_match = BRANCH_ISSUE_KEY_REGEX.match(branch_name)
+        if issue_key_match is not None:
+            return issue_key_match.group(1)
+
+    def tag_commit_if_neccessary(self):
+        with open(self.commit_msg_filepath, "r+") as file:
+            commit_msg = file.read()
+
+            if not self.is_already_tagged(commit_msg):
+                self.tag_commit_message(file, commit_msg)
+
+    def is_already_tagged(self, commit_msg: str) -> bool:
+        return COMMIT_ISSUE_KEY_REGEX.match(commit_msg) is not None
+
+    def tag_commit_message(self, file, commit_msg: str):
+        file.seek(0, 0)
+        file.write(f"{self.issue_key}: {commit_msg}")
+
+
+IssueKeyTagger()
