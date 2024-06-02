@@ -9,15 +9,12 @@ COMMIT_ISSUE_KEY_REGEX = re.compile(r"^[A-Z]+?-\d+?:")
 
 class IssueKeyTagger:
     def __init__(self) -> None:
-        self.commit_msg_filepath = self.collect_git_parameters()
+        self.commit_msg_filepath = sys.argv[1]
         branch_name = self.get_branch_name()
-        self.issue_key = self.find_issue_key(branch_name)
+        issue_key = self.find_issue_key(branch_name)
 
-        if self.issue_key is not None:
-            self.tag_commit_if_neccessary()
-
-    def collect_git_parameters(self) -> str:
-        return sys.argv[1]
+        if issue_key is not None:
+            self.tag_commit_if_neccessary(issue_key)
 
     def get_branch_name(self) -> str:
         completed_process = subprocess.run(["git", "branch", "--show-current"], capture_output=True)
@@ -25,7 +22,7 @@ class IssueKeyTagger:
         if completed_process.returncode == 0:
             return completed_process.stdout.decode("utf-8").strip()
 
-        print("No branch name found. Skip prefixing the commit-message.")
+        # the git command returns code 128 when not on a valid branch in addition to also just returning no output
         return ""
 
     def find_issue_key(self, branch_name: str) -> str | None:
@@ -33,19 +30,19 @@ class IssueKeyTagger:
         if issue_key_match is not None:
             return issue_key_match.group(1)
 
-    def tag_commit_if_neccessary(self):
+    def tag_commit_if_neccessary(self, issue_key: str):
         with open(self.commit_msg_filepath, "r+") as file:
             commit_msg = file.read()
 
             if not self.is_already_tagged(commit_msg):
-                self.tag_commit_message(file, commit_msg)
+                self.tag_commit_message(file, commit_msg, issue_key)
 
     def is_already_tagged(self, commit_msg: str) -> bool:
         return COMMIT_ISSUE_KEY_REGEX.match(commit_msg) is not None
 
-    def tag_commit_message(self, file, commit_msg: str):
+    def tag_commit_message(self, file, commit_msg: str, issue_key: str):
         file.seek(0, 0)
-        file.write(f"{self.issue_key}: {commit_msg}")
+        file.write(f"{issue_key}: {commit_msg}")
 
 
 IssueKeyTagger()
