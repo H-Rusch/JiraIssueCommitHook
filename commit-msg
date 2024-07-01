@@ -38,7 +38,7 @@ class IssueKeyTagger:
                 self.tag_commit_message(file, commit_msg, issue_key)
 
     def is_already_tagged(self, commit_msg: str) -> bool:
-        return COMMIT_ISSUE_KEY_REGEX.match(commit_msg) is not None
+        return COMMIT_ISSUE_KEY_REGEX.match(commit_msg) is not None or commit_msg.lower().startswith("no-ticket")
 
     def tag_commit_message(self, file, commit_msg: str, issue_key: str):
         file.seek(0, 0)
