@@ -3,7 +3,7 @@
 import sys, re
 import subprocess
 
-BRANCH_ISSUE_KEY_REGEX = re.compile(r".*?/([A-Z]+?-\d+?)[-/].")
+BRANCH_ISSUE_KEY_REGEX = re.compile(r".*?/([a-zA-Z]+?-\d+?)[-/].")
 COMMIT_ISSUE_KEY_REGEX = re.compile(r"^[A-Z]+?-\d+?:")
 
 
@@ -28,7 +28,7 @@ class IssueKeyTagger:
     def find_issue_key(self, branch_name: str) -> str | None:
         issue_key_match = BRANCH_ISSUE_KEY_REGEX.match(branch_name)
         if issue_key_match is not None:
-            return issue_key_match.group(1)
+            return issue_key_match.group(1).upper()
 
     def tag_commit_if_neccessary(self, issue_key: str):
         with open(self.commit_msg_filepath, "r+") as file:
