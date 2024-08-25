@@ -12,7 +12,42 @@ This script can be used as a [Git Hook](https://git-scm.com/docs/githooks) to au
 | branchname                 | Message            | Message          | No action will be taken when no Jira issue key is found                    |
 
 
-## Usage
-Place the `commit-msg` script into the `.git/hooks/` directory for it to be picked up by Git. 
+## Prerequisites
 
-Make sure the script is executable and the it points to a valid python3 installation.
+- **Python 3.x**: Make sure Python 3 is installed on your machine.
+- **Git**: You need Git installed and configured.
+
+
+## Installation
+
+1. **Download the Script**: Place the `commit-msg` script into the `.git/hooks/` directory of your local repository.
+
+   - **Alternatively**, if you want to automatically apply this hook to all newly cloned repositories, you can set up a [Git template directory](https://git-scm.com/docs/git-init#_template_directory) and place the `commit-msg` script in the `hooks` folder of your template. This will ensure the hook is included in all new repositories initialized with `git init`.
+
+2. **Make the Script Executable**:
+   ```bash
+   chmod +x .git/hooks/commit-msg
+   ```
+
+3. **Ensure Correct Python Path**: Verify that the first line of the `commit-msg` script points to a valid Python 3 installation. The base version of the script assumes the usage of a [venv](https://docs.python.org/3/library/venv.html) for its Python installation. \
+Alternatively, you could change it to use a different Python environment. For example:
+
+    ```bash
+    #!/usr/bin/env python3
+    ```
+
+## Usage
+
+Once installed, the hook will automatically run each time you create a commit. The script scans the branch name for a Jira issue key (e.g., ABC-123) and prefixes it to the commit message, if not already present.
+
+## Uninstallation
+
+To uninstall the commit hook:
+
+```bash
+rm .git/hooks/commit-msg
+```
+
+## License
+
+This project is licensed under the MIT License.
