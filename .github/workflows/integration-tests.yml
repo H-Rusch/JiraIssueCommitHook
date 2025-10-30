@@ -1,0 +1,23 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Configure git for CI
+      run: |
+        git config --global user.email "ci@example.com"
+        git config --global user.name "CI Runner"
+    - name: Run Cucumber tests
+      working-directory: integration-tests
+      run: cargo test

@@ -1,5 +1,7 @@
 # Jira Issue Commit Hook
 
+[![Integration Tests](https://github.com/H-Rusch/JiraIssueCommitHook/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/H-Rusch/JiraIssueCommitHook/actions/workflows/integration-tests.yml)
+
 This script can be used as a [Git Hook](https://git-scm.com/docs/githooks) to automatically prefix commit messages with the branches associated Jira issue. 
 
 ## Examples
