@@ -18,6 +18,7 @@ Feature: Running the commit-msg hook
       | feature/abc-123-branch        | "Message" | "ABC-123: Message"  |
       | bugfix/GG-12345-branch        | "Message" | "GG-12345: Message" |
       | something-else/ABC-123-branch | "Message" | "ABC-123: Message"  |
+      | ABC-123-branch                | "Message" | "ABC-123: Message"  |
 
   Scenario Outline: Committing on invalid branch does not prefix commit message
 
@@ -29,7 +30,6 @@ Feature: Running the commit-msg hook
     Examples:
       | branch                 | message   |
       | branch-name            | "Message" |
-      | ABC-123-branch         | "Message" |
       | feauture/ABC-123branch | "Message" |
       | feauture/ABC123-branch | "Message" |
 

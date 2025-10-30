@@ -5,7 +5,7 @@ import re
 import sys
 import subprocess
 
-BRANCH_ISSUE_KEY_REGEX = re.compile(r".*?/([a-zA-Z]+?-\d+?)[-/].")
+BRANCH_ISSUE_KEY_REGEX = re.compile(r"(.*?/)?([a-zA-Z]+?-\d+?)[-/].")
 KEY = r"[A-Z]+?-\d+?"
 DEFAULT_COMMIT_ISSUE_KEY_REGEX = re.compile(rf"^{KEY}:")
 
@@ -27,7 +27,7 @@ def get_branch_name() -> str:
 def find_issue_key(branch_name: str) -> str | None:
     issue_key_match = BRANCH_ISSUE_KEY_REGEX.match(branch_name)
     if issue_key_match is not None:
-        return issue_key_match.group(1).upper()
+        return issue_key_match.group(2).upper()
 
 
 def tag_commit_if_neccessary(commit_msg_filepath: str, issue_key: str):
