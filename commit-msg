@@ -44,7 +44,7 @@ def is_already_tagged(commit_msg: str) -> bool:
     if commit_msg.lower().startswith("no-ticket"):
         return True
     # create custom matcher for custom format
-    if COMMIT_MESSAGE_FORMAT is not None and COMMIT_MESSAGE_FORMAT != "":
+    if COMMIT_MESSAGE_FORMAT is not None:
         pattern = re.escape(COMMIT_MESSAGE_FORMAT)
         pattern = pattern.replace(r"\{\{key\}\}", KEY)
         pattern = pattern.replace(r"\{\{message\}\}", r".+")
