@@ -43,15 +43,18 @@ impl TestWorld {
 
     fn run(&self, cmd: &str, args: &[&str]) -> Output {
         let mut binding = Command::new(cmd);
-        let command = binding.args(args).env_clear().current_dir(&self.directory);
+        let command = binding.args(args).current_dir(&self.directory);
         if let Some(format_string) = &self.custom_format {
             command.env(FORMAT_ENV, format_string);
+        } else {
+            command.env_remove(FORMAT_ENV);
         }
 
         let output = command.unwrap();
         assert!(
             output.status.success(),
-            "{cmd} failed in {:?}",
+            "{:?} failed in {:?}",
+            command,
             self.directory
         );
         output
