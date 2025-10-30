@@ -1,48 +1,60 @@
 #! /usr/bin/env python3
 
-import sys, re
+import os
+import re
+import sys
 import subprocess
 
 BRANCH_ISSUE_KEY_REGEX = re.compile(r".*?/([a-zA-Z]+?-\d+?)[-/].")
 COMMIT_ISSUE_KEY_REGEX = re.compile(r"^[A-Z]+?-\d+?:")
 
+COMMIT_MESSAGE_FORMAT = os.environ.get("COMMIT_MESSAGE_FORMAT")
 
-class IssueKeyTagger:
-    def __init__(self) -> None:
-        self.commit_msg_filepath = sys.argv[1]
-        branch_name = self.get_branch_name()
-        issue_key = self.find_issue_key(branch_name)
 
-        if issue_key is not None:
-            self.tag_commit_if_neccessary(issue_key)
+def get_branch_name() -> str:
+    completed_process = subprocess.run(
+        ["git", "branch", "--show-current"], capture_output=True
+    )
 
-    def get_branch_name(self) -> str:
-        completed_process = subprocess.run(["git", "branch", "--show-current"], capture_output=True)
-
-        if completed_process.returncode == 0:
-            return completed_process.stdout.decode("utf-8").strip()
-
-        # the git command returns code 128 when not on a valid branch in addition to also just returning no output
+    if completed_process.returncode != 0:
+        # the git command returns code 128 when HEAD is corrupted
         return ""
 
-    def find_issue_key(self, branch_name: str) -> str | None:
-        issue_key_match = BRANCH_ISSUE_KEY_REGEX.match(branch_name)
-        if issue_key_match is not None:
-            return issue_key_match.group(1).upper()
-
-    def tag_commit_if_neccessary(self, issue_key: str):
-        with open(self.commit_msg_filepath, "r+") as file:
-            commit_msg = file.read()
-
-            if not self.is_already_tagged(commit_msg):
-                self.tag_commit_message(file, commit_msg, issue_key)
-
-    def is_already_tagged(self, commit_msg: str) -> bool:
-        return COMMIT_ISSUE_KEY_REGEX.match(commit_msg) is not None or commit_msg.lower().startswith("no-ticket")
-
-    def tag_commit_message(self, file, commit_msg: str, issue_key: str):
-        file.seek(0, 0)
-        file.write(f"{issue_key}: {commit_msg}")
+    return completed_process.stdout.decode("utf-8").strip()
 
 
-IssueKeyTagger()
+def find_issue_key(branch_name: str) -> str | None:
+    issue_key_match = BRANCH_ISSUE_KEY_REGEX.match(branch_name)
+    if issue_key_match is not None:
+        return issue_key_match.group(1).upper()
+
+
+def tag_commit_if_neccessary(commit_msg_filepath: str, issue_key: str):
+    with open(commit_msg_filepath, "r+") as file:
+        commit_msg = file.read()
+
+        if not is_already_tagged(commit_msg):
+            tag_commit_message(file, issue_key, commit_msg)
+
+
+def is_already_tagged(commit_msg: str) -> bool:
+    return COMMIT_ISSUE_KEY_REGEX.match(
+        commit_msg
+    ) is not None or commit_msg.lower().startswith("no-ticket")
+
+
+def tag_commit_message(file, issue_key: str, commit_msg: str):
+    file.seek(0, 0)
+    file.write(format_commit_message(issue_key, commit_msg))
+
+
+def format_commit_message(issue_key: str, commit_msg: str) -> str:
+    return f"{issue_key}: {commit_msg}"
+
+
+commit_msg_filepath = sys.argv[1]
+branch_name = get_branch_name()
+issue_key = find_issue_key(branch_name)
+
+if issue_key is not None:
+    tag_commit_if_neccessary(commit_msg_filepath, issue_key)
