@@ -1,0 +1,14 @@
+[package]
+name = "cucumber-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+cucumber = "0.21"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+assert_cmd = "2"
+assert_fs = "1"
+
+[[test]]
+name = "steps"
+harness = false

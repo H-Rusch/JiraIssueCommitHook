@@ -43,6 +43,10 @@ To uninstall the commit hook:
 rm .git/hooks/commit-msg
 ```
 
+## Tests
+
+Integration tests are implemented to verify the behavior of this script using [cucumber-rs](https://github.com/cucumber-rs/cucumber). Tests are written inside the `integration-tests` directory.
+
 ## License
 
 This project is licensed under the MIT License.
