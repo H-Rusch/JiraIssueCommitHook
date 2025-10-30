@@ -14,6 +14,26 @@ This script can be used as a [Git Hook](https://git-scm.com/docs/githooks) to au
 | branchname                 | Message            | Message          | No action will be taken when no Jira issue key is found                    |
 
 
+## Configuration
+
+By default the commit messages are prefixed with the Jira key followed by a hyphen `ABC-123: ...` as shown in the examples above.
+
+This format can be specified by providing the environment variable `COMMIT_MESSAGE_FORMAT` by giving a formatting string using `{{key}}` and `{{message}}` as placeholders for the key and message respectively.
+
+### Example:
+
+for Branch `feauture/ABC-123-branch` and message `Message`
+
+```sh
+export COMMIT_MESSAGE_FORMAT="[{{key}}] -> {{message}}"
+```
+
+Results in:
+
+```
+[ABC-123] -> Some Message
+```
+
 ## Prerequisites
 
 - **Python 3.x**: Make sure Python 3 is installed on your machine.

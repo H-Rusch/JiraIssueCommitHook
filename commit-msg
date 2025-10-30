@@ -6,7 +6,8 @@ import sys
 import subprocess
 
 BRANCH_ISSUE_KEY_REGEX = re.compile(r".*?/([a-zA-Z]+?-\d+?)[-/].")
-COMMIT_ISSUE_KEY_REGEX = re.compile(r"^[A-Z]+?-\d+?:")
+KEY = r"[A-Z]+?-\d+?"
+DEFAULT_COMMIT_ISSUE_KEY_REGEX = re.compile(rf"^{KEY}:")
 
 COMMIT_MESSAGE_FORMAT = os.environ.get("COMMIT_MESSAGE_FORMAT")
 
@@ -38,9 +39,20 @@ def tag_commit_if_neccessary(commit_msg_filepath: str, issue_key: str):
 
 
 def is_already_tagged(commit_msg: str) -> bool:
-    return COMMIT_ISSUE_KEY_REGEX.match(
-        commit_msg
-    ) is not None or commit_msg.lower().startswith("no-ticket")
+    if DEFAULT_COMMIT_ISSUE_KEY_REGEX.match(commit_msg):
+        return True
+    if commit_msg.lower().startswith("no-ticket"):
+        return True
+    # create custom matcher for custom format
+    if COMMIT_MESSAGE_FORMAT is not None and COMMIT_MESSAGE_FORMAT != "":
+        pattern = re.escape(COMMIT_MESSAGE_FORMAT)
+        pattern = pattern.replace(r"\{\{key\}\}", KEY)
+        pattern = pattern.replace(r"\{\{message\}\}", r".+")
+
+        if re.match(pattern, commit_msg):
+            return True
+
+    return False
 
 
 def tag_commit_message(file, issue_key: str, commit_msg: str):
@@ -49,7 +61,11 @@ def tag_commit_message(file, issue_key: str, commit_msg: str):
 
 
 def format_commit_message(issue_key: str, commit_msg: str) -> str:
-    return f"{issue_key}: {commit_msg}"
+    if COMMIT_MESSAGE_FORMAT is None or COMMIT_MESSAGE_FORMAT == "":
+        return f"{issue_key}: {commit_msg}"
+    return COMMIT_MESSAGE_FORMAT.replace(r"{{key}}", issue_key).replace(
+        r"{{message}}", commit_msg
+    )
 
 
 commit_msg_filepath = sys.argv[1]

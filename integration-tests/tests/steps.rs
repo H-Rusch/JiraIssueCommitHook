@@ -4,35 +4,31 @@ use assert_cmd::Command;
 use assert_fs::TempDir;
 use cucumber::{given, then, when, World};
 
+const FORMAT_ENV: &str = "COMMIT_MESSAGE_FORMAT";
+
 #[derive(Debug, World)]
 #[world(init = Self::new)]
 struct TestWorld {
     directory: TempDir,
+    custom_format: Option<String>,
 }
 
 impl TestWorld {
     fn new() -> Self {
         Self {
             directory: TempDir::new().unwrap(),
+            custom_format: None,
         }
     }
 
     fn init_git_repo(&self) {
         let repo_path = self.directory.path();
 
-        run("git", &["init"], repo_path);
-        run(
-            "git",
-            &["commit", "--allow-empty", "-m", "Root commit"],
-            repo_path,
-        );
+        self.run("git", &["init"]);
+        self.run("git", &["commit", "--allow-empty", "-m", "Root commit"]);
 
-        run(
-            "git",
-            &["config", "user.email", "test@example.com"],
-            repo_path,
-        );
-        run("git", &["config", "user.name", "Test User"], repo_path);
+        self.run("git", &["config", "user.email", "test@example.com"]);
+        self.run("git", &["config", "user.name", "Test User"]);
 
         let source_path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
@@ -42,7 +38,23 @@ impl TestWorld {
 
         copy(&source_path, &hook_path).expect("failed to copy commit-msg hook");
 
-        run("chmod", &["+x", hook_path.to_str().unwrap()], repo_path);
+        self.run("chmod", &["+x", hook_path.to_str().unwrap()]);
+    }
+
+    fn run(&self, cmd: &str, args: &[&str]) -> Output {
+        let mut binding = Command::new(cmd);
+        let command = binding.args(args).env_clear().current_dir(&self.directory);
+        if let Some(format_string) = &self.custom_format {
+            command.env(FORMAT_ENV, format_string);
+        }
+
+        let output = command.unwrap();
+        assert!(
+            output.status.success(),
+            "{cmd} failed in {:?}",
+            self.directory
+        );
+        output
     }
 }
 
@@ -53,28 +65,24 @@ async fn initialized_git_repo(world: &mut TestWorld) {
 
 #[given(expr = "the repo is on branch {word}")]
 async fn switch_to_branch(world: &mut TestWorld, branch: String) {
-    switch_to_new_branch(branch, &world.directory);
+    switch_to_new_branch(world, branch);
 }
 
 #[then(expr = "the current branch is {word}")]
 async fn current_branch_is(world: &mut TestWorld, expected_branch: String) {
-    let branch = get_cmd_stdout("git", &["branch", "--show"], &world.directory);
+    let branch = get_cmd_stdout(world, "git", &["branch", "--show"]);
 
     assert_eq!(expected_branch, branch, "Current branch is not expected")
 }
 
 #[when(regex = "^committing with message \"(.+)\"$")]
 async fn committing_with_message(world: &mut TestWorld, message: String) {
-    run(
-        "git",
-        &["commit", "--allow-empty", "-m", &message],
-        &world.directory,
-    );
+    world.run("git", &["commit", "--allow-empty", "-m", &message]);
 }
 
 #[then(regex = "^the commit-message is \"(.+)\"$")]
 async fn assert_message_written(world: &mut TestWorld, expected_message: String) {
-    let message = get_cmd_stdout("git", &["log", "-1", "--pretty=%B"], &world.directory);
+    let message = get_cmd_stdout(world, "git", &["log", "-1", "--pretty=%B"]);
 
     assert_eq!(
         expected_message, message,
@@ -84,30 +92,28 @@ async fn assert_message_written(world: &mut TestWorld, expected_message: String)
 
 #[given(expr = "a branch {word} with commits exists")]
 async fn branch_with_commits_exists(world: &mut TestWorld, branch: String) {
-    switch_to_new_branch(branch, &world.directory);
+    switch_to_new_branch(world, branch);
     committing_with_message(world, "Some message".to_string()).await;
-    run("git", &["switch", "-"], &world.directory);
+    world.run("git", &["switch", "-"]);
 }
 
 #[then(expr = "rebasing current branch onto {word} works without error")]
 async fn rebasing_current_onto(world: &mut TestWorld, branch: String) {
-    run("git", &["rebase", &branch], &world.directory);
+    world.run("git", &["rebase", &branch]);
 }
 
-fn switch_to_new_branch(branch: String, path: &Path) {
-    run("git", &["switch", "-c", &branch], path);
+#[given(regex = "^setting the custom commit message format as \"(.+)\"$")]
+async fn environment_variable_is_set(world: &mut TestWorld, custom_format: String) {
+    world.custom_format = Some(custom_format);
 }
 
-/// Run a command that is expected to finish successfully.
-fn run(cmd: &str, args: &[&str], dir: &Path) -> Output {
-    let output = Command::new(cmd).args(args).current_dir(dir).unwrap();
-    assert!(output.status.success(), "{cmd} failed in {:?}", dir);
-    output
+fn switch_to_new_branch(world: &TestWorld, branch: String) {
+    world.run("git", &["switch", "-c", &branch]);
 }
 
 /// Run a command that is expected to finish successfully and extract its output text.
-fn get_cmd_stdout(cmd: &str, args: &[&str], dir: &Path) -> String {
-    let output = run(cmd, args, dir);
+fn get_cmd_stdout(world: &TestWorld, cmd: &str, args: &[&str]) -> String {
+    let output = world.run(cmd, args);
 
     let sdtout =
         String::from_utf8(output.stdout).expect("Could not convert command output to string");
