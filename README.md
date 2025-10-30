@@ -29,12 +29,7 @@ This script can be used as a [Git Hook](https://git-scm.com/docs/githooks) to au
    chmod +x .git/hooks/commit-msg
    ```
 
-3. **Ensure Correct Python Path**: Verify that the first line of the `commit-msg` script points to a valid Python 3 installation. The base version of the script assumes the usage of a [venv](https://docs.python.org/3/library/venv.html) for its Python installation. \
-Alternatively, you could change it to use a different Python environment. For example:
-
-    ```bash
-    #!/usr/bin/env python3
-    ```
+3. **Ensure Correct Python Path**: Verify that the first line of the `commit-msg` script points to a valid Python 3 installation. 
 
 ## Usage
 
